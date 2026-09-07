@@ -1,0 +1,5 @@
+env: "local" #local,dev,prod
+httpServer:
+address: "localhost:8080"
+timeout: 5s
+idleTimeout: 60s
