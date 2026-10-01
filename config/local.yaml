@@ -1,5 +1,8 @@
 env: "local" #local,dev,prod
+dbTimeout: 3s
 httpServer:
 address: "localhost:8080"
 timeout: 5s
 idleTimeout: 60s
+
+

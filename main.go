@@ -2,7 +2,9 @@ package main
 
 import (
 	"awesomeProject/Internal/config"
-	"fmt"
+	"awesomeProject/Internal/lib/sl"
+	postgresql "awesomeProject/storage/psql"
+	"context"
 	"log"
 	"log/slog"
 	"os"
@@ -20,6 +22,7 @@ const (
 
 func main() {
 	err := godotenv.Load()
+
 	cfg := config.MustLoad()
 
 	if err != nil {
@@ -29,7 +32,17 @@ func main() {
 	loger := setupLoger(cfg.Env)
 
 	loger.Debug("Loger initialized", slog.String("env", cfg.Env))
-	fmt.Println(cfg)
+
+	ctx, cansel := context.WithTimeout(context.Background(), cfg.DbTimeout)
+
+	defer cansel()
+
+	_, err = postgresql.New(ctx, cfg.ConnectionString)
+	if err != nil {
+		loger.Error("failed to init storage", sl.Err(err))
+		return
+	}
+
 }
 
 func setupLoger(env string) *slog.Logger {
