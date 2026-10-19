@@ -46,15 +46,29 @@ func (s *Storage) SaveUrl(saveUrl string, alias string, ctx context.Context) (in
 	const op = "storage/psql/psql.go/SaveUrl"
 	var id int64
 
-	err := s.Db.QueryRowContext(ctx, `INSERT INTO url(alias,url) VALUES($,$) RETURNING id`, alias, saveUrl).Scan(&id)
+	err := s.Db.QueryRowContext(ctx, `INSERT INTO url(alias,url) VALUES($1,$2) RETURNING id`, alias, saveUrl).Scan(&id)
 
 	if err != nil {
 
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 			return 0, fmt.Errorf("%s: %w", op, storage.ErrURLExists)
 		}
-
+		return 0, fmt.Errorf("%s %w", op, err)
 	}
 
-	return id,nil
+	return id, nil
+}
+
+func(s Storage) GetUrl(alias string,ctx context.Context) (string,error){
+	const op = "storage/psql/psql.go/GetUrl"
+
+	var url string
+
+	err := s.Db.QueryRowContext(ctx,`SELECT url FROM url WHERE alias = $1`,alias).Scan(url)
+
+	if err != nil{
+		return "",fmt.Errorf("%s Ошибка запроса: %s",op,err)
+	}
+
+	return url,nil
 }

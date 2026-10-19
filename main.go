@@ -37,12 +37,20 @@ func main() {
 
 	defer cansel()
 
-	_, err = postgresql.New(ctx, cfg.ConnectionString)
+	storage, err := postgresql.New(ctx, cfg.ConnectionString)
 	if err != nil {
 		loger.Error("failed to init storage", sl.Err(err))
 		return
 	}
+	loger.Debug("Data base initializated", slog.String("env", cfg.Env))
 
+	id, err := storage.SaveUrl("https://google.com", "google.com", ctx)
+	if err!=nil{
+		loger.Error("Ошибка вставки url:",sl.Err(err))
+	}
+
+	loger.Info("id inserts:",slog.Int64("id",id))
+	
 }
 
 func setupLoger(env string) *slog.Logger {
