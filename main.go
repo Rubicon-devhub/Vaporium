@@ -2,13 +2,19 @@ package main
 
 import (
 	"awesomeProject/Internal/config"
+	midlLog "awesomeProject/Internal/http-server/midlware/loger"
+	"awesomeProject/Internal/lib/handlers/url"
 	"awesomeProject/Internal/lib/sl"
+	"net/http"
+
 	postgresql "awesomeProject/storage/psql"
 	"context"
 	"log"
 	"log/slog"
 	"os"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 )
 
@@ -44,13 +50,29 @@ func main() {
 	}
 	loger.Debug("Data base initializated", slog.String("env", cfg.Env))
 
-	id, err := storage.SaveUrl("https://google.com", "google.com", ctx)
-	if err!=nil{
-		loger.Error("Ошибка вставки url:",sl.Err(err))
+	router := chi.NewRouter()
+
+	mv := midlLog.New(loger)
+
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.RequestID)
+
+	router.Use(mv)
+
+	router.Post("/url", url.New(loger, storage, ctx))
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HttpServer.Timeout,
+		WriteTimeout: cfg.HttpServer.Timeout,
+		IdleTimeout:  cfg.HttpServer.IdleTimeout,
 	}
 
-	loger.Info("id inserts:",slog.Int64("id",id))
-	
+	if err:= srv.ListenAndServe(); err!=nil{
+		loger.Error("failed to start server")
+		
+	}
 }
 
 func setupLoger(env string) *slog.Logger {
